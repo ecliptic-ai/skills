@@ -1,0 +1,8 @@
+{
+  "name": "ecliptic",
+  "version": "0.1.0",
+  "description": "AI-powered beat-synced video editing using Gemini and FFmpeg",
+  "author": {
+    "name": "Ecliptic-AI"
+  }
+}
