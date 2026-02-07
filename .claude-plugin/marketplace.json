@@ -1,0 +1,18 @@
+{
+  "name": "skills",
+  "owner": {
+    "name": "Ecliptic-AI",
+    "email": "frontboat1@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "ecliptic",
+      "source": "./plugins/ecliptic",
+      "description": "AI-powered beat-synced video editing using Gemini and FFmpeg",
+      "version": "0.1.0",
+      "author": {
+        "name": "Ecliptic-AI"
+      }
+    }
+  ]
+}
