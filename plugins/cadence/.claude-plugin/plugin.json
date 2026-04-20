@@ -1,0 +1,22 @@
+{
+  "name": "cadence",
+  "description": "AI-augmented video splicing framework — sensors, shared timeline, renderer. Ships a TypeScript MCP server plus a Python librosa sidecar for beat detection.",
+  "author": {
+    "name": "frontboat",
+    "email": "frontboat@proton.me",
+    "url": "https://x.com/frontboat"
+  },
+  "homepage": "https://github.com/ecliptic-ai/skills/tree/main/plugins/cadence",
+  "repository": "https://github.com/ecliptic-ai/skills",
+  "license": "MIT",
+  "keywords": ["video", "editing", "gemini", "librosa", "ffmpeg", "mcp"],
+  "userConfig": {
+    "gemini_api_key": {
+      "type": "string",
+      "title": "Gemini API key",
+      "description": "Gemini API key (get from https://aistudio.google.com/apikey)",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

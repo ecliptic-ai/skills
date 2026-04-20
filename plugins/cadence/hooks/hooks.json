@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v python3 >/dev/null 2>&1 || { echo 'cadence: python3 is required but not found on PATH. Install Python 3.11+ to use this plugin.' >&2; exit 1; }; command -v ffmpeg >/dev/null 2>&1 || { echo 'cadence: ffmpeg is required but not found on PATH.' >&2; exit 1; }; diff -q \"${CLAUDE_PLUGIN_ROOT}/server/python/requirements.txt\" \"${CLAUDE_PLUGIN_DATA}/requirements.txt\" >/dev/null 2>&1 || ( python3 -m venv \"${CLAUDE_PLUGIN_DATA}/venv\" && \"${CLAUDE_PLUGIN_DATA}/venv/bin/pip\" install --quiet -r \"${CLAUDE_PLUGIN_ROOT}/server/python/requirements.txt\" && cp \"${CLAUDE_PLUGIN_ROOT}/server/python/requirements.txt\" \"${CLAUDE_PLUGIN_DATA}/requirements.txt\" ) || { rm -f \"${CLAUDE_PLUGIN_DATA}/requirements.txt\"; echo 'cadence: failed to install Python dependencies.' >&2; exit 1; }"
+          }
+        ]
+      }
+    ]
+  }
+}

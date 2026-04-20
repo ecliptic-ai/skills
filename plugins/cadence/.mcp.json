@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "cadence": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server/dist/index.js"],
+      "env": {
+        "GEMINI_API_KEY": "${user_config.gemini_api_key}",
+        "PYTHON_BIN": "${CLAUDE_PLUGIN_DATA}/venv/bin/python3",
+        "BEATS_SCRIPT": "${CLAUDE_PLUGIN_ROOT}/server/python/beats.py",
+        "CACHE_DIR": "${CLAUDE_PLUGIN_DATA}/cache"
+      }
+    }
+  }
+}

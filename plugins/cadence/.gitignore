@@ -1,0 +1,16 @@
+.DS_Store
+
+# npm
+server/node_modules/
+
+# local dev cache (created by the MCP server at runtime when CACHE_DIR is unset)
+server/.mcp-cache/
+
+# stale artifact from a prior mcp-use iteration; current server uses @modelcontextprotocol/sdk directly
+server/.mcp-use/
+
+# local Python venv (plugin mode puts venv in ${CLAUDE_PLUGIN_DATA}; local dev may create it here)
+server/python/venv/
+
+# note: server/dist/ IS committed so users installing via relative-path marketplace
+# get a runnable server without a build step.

@@ -16,6 +16,12 @@
       "author": {
         "name": "Ecliptic-AI"
       }
+    },
+    {
+      "name": "cadence",
+      "source": "./plugins/cadence",
+      "description": "AI-augmented video splicing framework — sensors, shared timeline, renderer. Ships a TypeScript MCP server plus a Python librosa sidecar for beat detection.",
+      "version": "0.1.0"
     }
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "name": "cadence-server",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "MCP server for the cadence framework: AI-augmented video splicing.",
+  "author": "frontboat",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "cadence",
+    "video-editing",
+    "gemini",
+    "librosa"
+  ],
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.49.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "execa": "^9.6.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
