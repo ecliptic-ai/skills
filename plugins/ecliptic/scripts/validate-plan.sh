@@ -22,7 +22,7 @@ fi
 
 # Validate JSON
 if ! echo "$PLAN" | jq empty 2>/dev/null; then
-  echo '{"valid":false,"errors":["Invalid JSON"]}' >&2
+  echo '{"valid":false,"errors":["Invalid JSON"]}'
   exit 1
 fi
 

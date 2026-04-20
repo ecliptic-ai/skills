@@ -4,21 +4,26 @@ set -euo pipefail
 # Upload video + audio to Gemini via REST API, get a structured EditPlan back.
 # Requires: curl, jq, GEMINI_API_KEY environment variable
 #
-# Usage (fresh upload):
+# File lifecycle: uploaded files are KEPT by default (48h TTL) so subsequent
+# runs can reuse them. Pass --cleanup (or export ECLIPTIC_CLEANUP=1) for
+# one-shot behavior that deletes immediately after use.
+#
+# Usage (fresh upload; files kept for reuse):
 #   bash gemini-edit-plan.sh --video clip.mp4 --audio song.mp3 --prompt "fast 30s action edit"
 #
-# Usage (keep files for reuse):
-#   bash gemini-edit-plan.sh --video clip.mp4 --audio song.mp3 --prompt "..." --no-cleanup
-#
-# Usage (reuse previously uploaded files):
+# Usage (reuse previously uploaded files; skips upload):
 #   bash gemini-edit-plan.sh --video-uri <uri> --video-mime video/mp4 \
 #     --audio-uri <uri> --audio-mime audio/mpeg --prompt "different prompt"
 #
+# Usage (one-shot: upload, run, delete):
+#   bash gemini-edit-plan.sh --video clip.mp4 --audio song.mp3 --prompt "..." --cleanup
+#
 # Output (stdout): EditPlan JSON
-# Logs (stderr): Progress messages
-# With --no-cleanup, also outputs ECLIPTIC_FILES JSON to stderr for reuse
+# Logs (stderr): Progress + ECLIPTIC_FILES JSON (unless --cleanup)
+# --no-cleanup is accepted as a no-op alias for the new default.
 
 BASE_URL="https://generativelanguage.googleapis.com"
+MODEL="${GEMINI_MODEL:-gemini-3-flash-preview}"
 TMPDIR="${TMPDIR:-/tmp}"
 WORK_DIR=$(mktemp -d "${TMPDIR}/ecliptic-XXXXXX")
 trap 'rm -rf "$WORK_DIR"' EXIT
@@ -33,7 +38,13 @@ AUDIO_MIME=""
 VIDEO_NAME=""
 AUDIO_NAME=""
 USER_PROMPT=""
-NO_CLEANUP=false
+
+# Cleanup behavior: keep files by default so users can iterate without
+# re-uploading. CLI flags override the env var.
+CLEANUP=false
+case "${ECLIPTIC_CLEANUP:-}" in
+  1|true|yes|TRUE|YES|True|Yes) CLEANUP=true ;;
+esac
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -44,7 +55,8 @@ while [[ $# -gt 0 ]]; do
     --audio-uri) AUDIO_URI="$2"; shift 2 ;;
     --audio-mime) AUDIO_MIME="$2"; shift 2 ;;
     --prompt) USER_PROMPT="$2"; shift 2 ;;
-    --no-cleanup) NO_CLEANUP=true; shift ;;
+    --cleanup) CLEANUP=true; shift ;;
+    --no-cleanup) CLEANUP=false; shift ;;
     *) echo "Unknown argument: $1" >&2; exit 1 ;;
   esac
 done
@@ -58,7 +70,7 @@ if [[ -n "$VIDEO_URI" && -n "$AUDIO_URI" ]]; then
     exit 1
   fi
 elif [[ -z "$VIDEO_PATH" || -z "$AUDIO_PATH" ]]; then
-  echo "Usage: bash gemini-edit-plan.sh --video <path> --audio <path> [--prompt <text>] [--no-cleanup]" >&2
+  echo "Usage: bash gemini-edit-plan.sh --video <path> --audio <path> [--prompt <text>] [--cleanup]" >&2
   echo "  Or:  bash gemini-edit-plan.sh --video-uri <uri> --video-mime <mime> --audio-uri <uri> --audio-mime <mime> [--prompt <text>]" >&2
   exit 1
 fi
@@ -194,11 +206,13 @@ else
   VIDEO_INFO=$(upload_file "$VIDEO_PATH" "video" "$VIDEO_MIME")
   VIDEO_NAME=$(echo "$VIDEO_INFO" | jq -r '.file.name')
   VIDEO_URI=$(echo "$VIDEO_INFO" | jq -r '.file.uri')
+  echo "  video uploaded: ${VIDEO_NAME} (${VIDEO_MIME})" >&2
 
   echo "Uploading audio to Gemini..." >&2
   AUDIO_INFO=$(upload_file "$AUDIO_PATH" "audio" "$AUDIO_MIME")
   AUDIO_NAME=$(echo "$AUDIO_INFO" | jq -r '.file.name')
   AUDIO_URI=$(echo "$AUDIO_INFO" | jq -r '.file.uri')
+  echo "  audio uploaded: ${AUDIO_NAME} (${AUDIO_MIME})" >&2
 
   if [[ -z "$VIDEO_NAME" || "$VIDEO_NAME" == "null" || -z "$AUDIO_NAME" || "$AUDIO_NAME" == "null" ]]; then
     echo "Error: File upload failed" >&2
@@ -215,9 +229,6 @@ fi
 if [[ -z "$USER_PROMPT" ]]; then
   USER_PROMPT="Create an engaging edit that syncs perfectly with the music"
 fi
-
-# Escape prompt for JSON embedding
-ESCAPED_PROMPT=$(echo "$USER_PROMPT" | jq -Rs '.')
 
 # Build the generateContent request
 PROMPT_TEXT="You are an expert video editor with years of experience creating viral edits, music videos, and trailers.
@@ -321,7 +332,7 @@ echo "Generating edit plan..." >&2
 
 # Call Gemini with timeout and single retry
 generate() {
-  curl -s --max-time 300 "${BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent" \
+  curl -s --max-time 300 "${BASE_URL}/v1beta/models/${MODEL}:generateContent" \
     -H "x-goog-api-key: ${GEMINI_API_KEY}" \
     -H "Content-Type: application/json" \
     -X POST \
@@ -338,16 +349,21 @@ if [[ -z "$RESPONSE" ]] || echo "$RESPONSE" | jq -e '.error' > /dev/null 2>&1; t
   RESPONSE=$(generate)
 fi
 
-# Cleanup or preserve uploaded files
+# Cleanup or preserve uploaded files. Default is preserve (48h TTL).
 if [[ "$REUSE_MODE" == false ]]; then
-  if [[ "$NO_CLEANUP" == true ]]; then
-    echo "ECLIPTIC_FILES={\"video_name\":\"${VIDEO_NAME}\",\"video_uri\":\"${VIDEO_URI}\",\"video_mime\":\"${VIDEO_MIME}\",\"audio_name\":\"${AUDIO_NAME}\",\"audio_uri\":\"${AUDIO_URI}\",\"audio_mime\":\"${AUDIO_MIME}\"}" >&2
-    echo "Files preserved. Reuse with --video-uri/--audio-uri or clean up with cleanup-gemini-files.sh" >&2
-  else
+  if [[ "$CLEANUP" == true ]]; then
     echo "Cleaning up Gemini files..." >&2
     delete_file "$VIDEO_NAME" &
     delete_file "$AUDIO_NAME" &
     wait
+  else
+    ECLIPTIC_JSON=$(jq -n -c \
+      --arg video_name "$VIDEO_NAME" --arg video_uri "$VIDEO_URI" --arg video_mime "$VIDEO_MIME" \
+      --arg audio_name "$AUDIO_NAME" --arg audio_uri "$AUDIO_URI" --arg audio_mime "$AUDIO_MIME" \
+      '{video_name: $video_name, video_uri: $video_uri, video_mime: $video_mime, audio_name: $audio_name, audio_uri: $audio_uri, audio_mime: $audio_mime}')
+    echo "ECLIPTIC_FILES=${ECLIPTIC_JSON}" >&2
+    echo "Files kept for reuse (48h TTL). Reuse with --video-uri/--audio-uri." >&2
+    echo "Delete now: bash \${CLAUDE_PLUGIN_ROOT}/scripts/cleanup-gemini-files.sh ${VIDEO_NAME} ${AUDIO_NAME}" >&2
   fi
 fi
 

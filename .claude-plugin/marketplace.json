@@ -4,12 +4,15 @@
     "name": "Ecliptic-AI",
     "email": "frontboat1@gmail.com"
   },
+  "metadata": {
+    "description": "Plugins from Ecliptic-AI"
+  },
   "plugins": [
     {
       "name": "ecliptic",
       "source": "./plugins/ecliptic",
       "description": "AI-powered beat-synced video editing using Gemini and FFmpeg",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Ecliptic-AI"
       }

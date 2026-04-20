@@ -1,7 +1,6 @@
 ---
 name: beat-sync-video-editing
 description: This skill should be used when the user asks to "edit a video to music", "create a beat-synced edit", "make a montage", "sync cuts to beats", "cut a video to the beat", "make a music video edit", "edit clips to a song", "build FFmpeg filters for video editing", or mentions combining video clips with audio tracks using timed cuts. Provides knowledge of the EditPlan format, FFmpeg filter_complex construction, and beat-sync editing workflows.
-version: 0.1.0
 ---
 
 # Beat-Sync Video Editing
@@ -43,29 +42,40 @@ Every edit starts as an EditPlan — a JSON structure that describes which video
 Run the Gemini script to analyze video + audio and produce a plan:
 
 ```bash
-# Fresh upload (files auto-deleted after):
+# Fresh upload (default: files kept 48h for reuse, ECLIPTIC_FILES printed on stderr):
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/gemini-edit-plan.sh \
   --video <video_path> \
   --audio <audio_path> \
   --prompt "<user's edit description>"
-
-# Keep files for reuse (outputs ECLIPTIC_FILES JSON to stderr):
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/gemini-edit-plan.sh \
-  --video <video_path> \
-  --audio <audio_path> \
-  --prompt "<description>" --no-cleanup
 
 # Reuse previously uploaded files (skips upload, much faster):
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/gemini-edit-plan.sh \
   --video-uri <uri> --video-mime <mime> \
   --audio-uri <uri> --audio-mime <mime> \
   --prompt "<different description>"
+
+# One-shot mode (delete files immediately after use):
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/gemini-edit-plan.sh \
+  --video <video_path> \
+  --audio <audio_path> \
+  --prompt "<description>" --cleanup
 ```
 
 - Outputs EditPlan JSON to stdout, progress to stderr
 - Requires `GEMINI_API_KEY`, `curl`, and `jq`
 - Gemini watches the video and listens to the audio simultaneously
-- Use `--no-cleanup` + reuse mode for fast iteration with different prompts
+
+**File lifecycle.** The script keeps uploaded files by default so subsequent runs can reuse them without re-uploading. Gemini enforces a 48-hour TTL — after that, URIs go stale and must be re-uploaded. Each run emits an `ECLIPTIC_FILES` JSON line on stderr containing `video_name`, `audio_name`, URIs, and MIME types — capture this to iterate with `--video-uri` / `--audio-uri`. The script also prints the exact `cleanup-gemini-files.sh` command at the end of every run so deletion is explicit and copy-pasteable. To flip the default to one-shot deletion, pass `--cleanup` or export `ECLIPTIC_CLEANUP=1` in the environment. `--no-cleanup` is accepted as a no-op alias for the default.
+
+**Model selection.** The script defaults to `gemini-3-flash-preview`. To use a different model, export `GEMINI_MODEL` before invocation:
+
+```bash
+export GEMINI_MODEL=gemini-3.1-pro-preview   # stronger reasoning, slower
+# or
+export GEMINI_MODEL=gemini-2.5-flash         # stable (non-preview) fallback
+```
+
+The model name is passed straight into the request URL, so any Gemini model that supports video + audio input and structured JSON output will work.
 
 ### Step 2: Validate the Plan
 
@@ -113,7 +123,7 @@ For a 3-clip edit, the `fullFilter` looks like:
 - `concat` joins all video segments in order
 - `atrim` extracts the audio section
 
-For the full FFmpeg filter reference, see `references/ffmpeg-filters.md`.
+For the full FFmpeg filter reference, see `${CLAUDE_SKILL_DIR}/references/ffmpeg-filters.md`.
 
 ## Troubleshooting
 
@@ -127,8 +137,8 @@ For the full FFmpeg filter reference, see `references/ffmpeg-filters.md`.
 
 ### Reference Files
 
-- **`references/ffmpeg-filters.md`** — Detailed FFmpeg filter_complex syntax, encoding options, common flags
-- **`references/edit-plan-schema.md`** — Full EditPlan JSON schema, validation rules, edge cases
+- **`${CLAUDE_SKILL_DIR}/references/ffmpeg-filters.md`** — Detailed FFmpeg filter_complex syntax, encoding options, common flags
+- **`${CLAUDE_SKILL_DIR}/references/edit-plan-schema.md`** — Full EditPlan JSON schema, validation rules, edge cases
 
 ### Scripts
 
