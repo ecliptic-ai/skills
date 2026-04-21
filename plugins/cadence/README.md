@@ -12,10 +12,10 @@ Given a video and an audio track, cadence produces a beat-synced montage. The fr
 cadence/
 ├── .claude-plugin/plugin.json   # plugin manifest + userConfig
 ├── .mcp.json                    # MCP server config (injects env vars)
-├── hooks/hooks.json             # SessionStart: bootstrap Python venv
 ├── skills/make-montage/         # /cadence:make-montage workflow
 └── server/                      # the bundled MCP server
     ├── src/                     # TypeScript source
+    │   └── bootstrap.ts         # prereq + venv setup on startup
     ├── index.ts                 # entry
     ├── package.json
     └── python/                  # Python sidecars (librosa)
@@ -57,9 +57,11 @@ claude plugin marketplace add ecliptic-ai/skills
 
 # Install
 claude plugin install cadence@skills
-# → prompted for Gemini API key (stored in keychain)
-# → SessionStart hook creates a Python venv + installs librosa to ${CLAUDE_PLUGIN_DATA}/venv
-# → MCP server boots, tools available
+# → prompted for Gemini API key (stored in keychain; if deferred, set via
+#   /plugin → Installed → cadence → Configure options)
+# → MCP server bootstraps on first spawn: verifies python3/ffmpeg/ffprobe,
+#   creates a Python venv + installs librosa to ${CLAUDE_PLUGIN_DATA}/venv
+# → tools available
 ```
 
 Then: `/cadence:make-montage <video> <audio>` runs the full pipeline as a skill, or have Claude call individual tools.
@@ -71,7 +73,7 @@ The plugin needs these on the host system (cannot be bundled):
 - Python 3.11+ (the venv and librosa install into `${CLAUDE_PLUGIN_DATA}`, but need a base interpreter)
 - ffmpeg + ffprobe
 
-The SessionStart hook detects missing prereqs and errors with a clear message.
+The server's bootstrap step detects missing prereqs on startup and exits with a clear message. The bootstrap also re-runs `pip install` whenever `requirements.txt` changes, so plugin updates that bump Python deps apply automatically.
 
 ## Framework principles
 

@@ -40,8 +40,8 @@ export async function renderFinal(timeline: TimelineState, outputPath: string): 
   if (timeline.clips.length === 0) throw new Error("Timeline has no clips");
   if (!timeline.audio) throw new Error("Timeline has no audio track");
 
-  const sourceUri = timeline.clips[0].sourceUri;
-  const sameSource = timeline.clips.every((c) => c.sourceUri === sourceUri);
+  const sourcePath = timeline.clips[0].source.path;
+  const sameSource = timeline.clips.every((c) => c.source.path === sourcePath);
   if (!sameSource) {
     throw new Error("Multi-source rendering not yet supported; all clips must share a source");
   }
@@ -50,8 +50,8 @@ export async function renderFinal(timeline: TimelineState, outputPath: string): 
   const concatInputs: string[] = [];
   for (const [i, clip] of timeline.clips.entries()) {
     filters.push(
-      `[0:v]trim=start=${clip.videoStart.toFixed(3)}:end=${clip.videoEnd.toFixed(3)},` +
-        `setpts=PTS-STARTPTS,format=yuv420p[v${i}]`
+      `[0:v]trim=start=${clip.source.startS.toFixed(3)}:end=${clip.source.endS.toFixed(3)},` +
+        `setpts=PTS-STARTPTS,format=yuv420p[v${i}]`,
     );
     concatInputs.push(`[v${i}]`);
   }
@@ -63,10 +63,10 @@ export async function renderFinal(timeline: TimelineState, outputPath: string): 
     "-nostats",
     "-loglevel", "warning",
     "-y",
-    "-i", sourceUri,
-    "-ss", timeline.audio.start.toFixed(3),
-    "-to", (timeline.audio.start + timeline.audio.duration).toFixed(3),
-    "-i", timeline.audio.sourceUri,
+    "-i", sourcePath,
+    "-ss", timeline.audio.startS.toFixed(3),
+    "-to", (timeline.audio.startS + timeline.audio.durationS).toFixed(3),
+    "-i", timeline.audio.path,
     "-filter_complex", filters.join(";"),
     "-map", "[outv]",
     "-map", "1:a",
@@ -84,8 +84,7 @@ export async function renderFinal(timeline: TimelineState, outputPath: string): 
     outputPath,
     outputBytes: size,
     clipCount: timeline.clips.length,
-    // Authoritative duration from the timeline (don't parse from ffmpeg's progress output).
-    durationS: timeline.audio.duration,
+    durationS: timeline.audio.durationS,
     warnings: parseFfmpegWarnings(result.stderr ?? ""),
   };
 }

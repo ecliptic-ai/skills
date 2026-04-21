@@ -21,7 +21,7 @@
       "name": "cadence",
       "source": "./plugins/cadence",
       "description": "AI-augmented video splicing framework — sensors, shared timeline, renderer. Ships a TypeScript MCP server plus a Python librosa sidecar for beat detection.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }
