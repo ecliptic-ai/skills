@@ -26,7 +26,7 @@ const err = (message: string) => ({
 
 const server = new McpServer({
   name: "cadence",
-  version: "0.2.0",
+  version: "0.2.1",
 });
 
 // ---------- Resources ----------
