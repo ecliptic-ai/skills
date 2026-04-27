@@ -2,6 +2,12 @@
   "name": "ecliptic",
   "description": "AI-powered beat-synced video editing using Gemini and FFmpeg",
   "author": {
-    "name": "Ecliptic-AI"
-  }
+    "name": "frontboat",
+    "email": "frontboat@proton.me",
+    "url": "https://x.com/frontboat"
+  },
+  "homepage": "https://github.com/ecliptic-ai/skills/tree/main/plugins/ecliptic",
+  "repository": "https://github.com/ecliptic-ai/skills",
+  "license": "MIT",
+  "keywords": ["video", "editing", "ffmpeg", "gemini", "beat-sync"]
 }

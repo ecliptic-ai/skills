@@ -9,7 +9,7 @@
   "homepage": "https://github.com/ecliptic-ai/skills/tree/main/plugins/cadence",
   "repository": "https://github.com/ecliptic-ai/skills",
   "license": "MIT",
-  "keywords": ["video", "editing", "gemini", "librosa", "ffmpeg", "mcp"],
+  "keywords": ["video", "editing", "ffmpeg", "gemini", "librosa", "mcp", "beat-detection"],
   "userConfig": {
     "gemini_api_key": {
       "type": "string",
