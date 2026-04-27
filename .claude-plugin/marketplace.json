@@ -5,20 +5,19 @@
     "email": "frontboat1@gmail.com"
   },
   "metadata": {
-    "description": "AI video editing plugins for Claude Code",
-    "pluginRoot": "./plugins"
+    "description": "AI video editing plugins for Claude Code"
   },
   "plugins": [
     {
       "name": "ecliptic",
-      "source": "./ecliptic",
+      "source": "./plugins/ecliptic",
       "description": "AI-powered beat-synced video editing using Gemini and FFmpeg",
       "category": "media",
       "tags": ["video", "editing", "ffmpeg", "gemini", "beat-sync"]
     },
     {
       "name": "cadence",
-      "source": "./cadence",
+      "source": "./plugins/cadence",
       "description": "AI-augmented video splicing framework — sensors, shared timeline, renderer. Ships a TypeScript MCP server plus a Python librosa sidecar for beat detection.",
       "category": "media",
       "tags": ["video", "editing", "ffmpeg", "gemini", "librosa", "mcp", "beat-detection"]
